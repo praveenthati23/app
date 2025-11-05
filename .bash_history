@@ -92,3 +92,29 @@ curl -v http://10.0.2.4:5000/addUser
 cd app/
 ls
 cat backend.py 
+clear
+pwd
+cd app/
+ls
+pwd
+cd ..
+git init
+git remote add origin https://github.com/praveenthati23/app.git
+git branch
+git clone
+git add .
+git commit -m "Initial backend commit"
+git push -u origin main
+git ststus
+git status
+git checkout dev
+git checkout -b dev
+git status
+git branch
+git push -u origin dev
+git checkout -b master
+git branch
+git checkout master
+git push -u origin master
+git pull
+git push -u origin master
