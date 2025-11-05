@@ -1,0 +1,36 @@
+trigger:
+- dev   # or "dev" if that’s your branch name
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  backend_vm_ip: "10.0.2.4"        # 🔁 Replace with your backend VM public/private IP
+  backend_vm_user: "bvm"              # your backend VM username
+  app_path: "/home/bvm/app"           # path to your Flask app on the backend VM
+
+steps:
+# Step 1: Checkout code
+- task: Checkout@1
+  displayName: "Checkout code from GitHub"
+
+# Step 2: Copy repo files to backend VM (using SSH)
+- task: CopyFilesOverSSH@0
+  inputs:
+    sshEndpoint: "backend-vm-ssh"     # name of your Azure DevOps service connection
+    sourceFolder: "$(Build.SourcesDirectory)"
+    targetFolder: "$(app_path)"
+  displayName: "Copy updated app code to backend VM"
+
+# Step 3: Restart Flask backend app
+- task: SSH@0
+  inputs:
+    sshEndpoint: "backend-vm-ssh"
+    runOptions: "inline"
+    inline: |
+      cd $(app_path)
+      echo "Stopping any existing backend..."
+      pkill -f "python3 backend.py" || true
+      echo "Starting backend app..."
+      nohup python3 backend.py > backend.log 2>&1 &
+  displayName: "Restart backend Flask app"
