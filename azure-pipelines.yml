@@ -1,0 +1,43 @@
+trigger:
+- master  # or dev
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: vm-secrets     # loads backend_pass from Library
+
+backend_host: "backend-vm"
+backend_user: "bvm"
+backend_path: "/home/bvm/app"
+
+steps:
+# 1. Checkout repository
+- checkout: self
+  displayName: "Checkout GitHub code"
+
+# 2. SSH to frontend VM
+- task: SSH@0
+  displayName: "Deploy backend via frontend bastion"
+  inputs:
+    sshEndpoint: "frontend-ssh"
+    runOptions: "inline"
+    inline: |
+      echo "=== Inside Frontend VM ==="
+
+      sudo apt-get update -y
+      sudo apt-get install -y sshpass git
+
+      echo "=== Jumping to Backend VM ==="
+      sshpass -p "$(backend_pass)" ssh -o StrictHostKeyChecking=no ${backend_user}@${backend_host} << 'EOF'
+        cd ${backend_path}
+
+        echo "Pulling latest code..."
+        git pull origin main
+
+        echo "Restarting backend Flask app..."
+        pkill -f "python3 backend.py" || true
+        nohup python3 backend.py > backend.log 2>&1 &
+
+        echo "✅ Deployment complete on backend!"
+      EOF
